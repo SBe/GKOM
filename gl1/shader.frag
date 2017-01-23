@@ -8,7 +8,6 @@ struct Material {
 
 struct Light {
     vec3 position;
-  
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
@@ -45,6 +44,6 @@ void main()
     vec3 specular = light.specular * (spec * material.specular);  
         
     vec3 result = ambient + diffuse + specular;
-    color = vec4(result, 1.0f);
-	
+    color = lightColor*vec4(result, 1.0f);
+
 }

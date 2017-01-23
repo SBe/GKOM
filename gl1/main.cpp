@@ -16,8 +16,13 @@
 #include "triangles.h"
 #include "buttons.h"
 
-#define HAMMERSPEED 1
-
+#define HAMMERSPEED 0.7
+#define LIGHT_POSITION 3.2f, 4.0f, -1.0f
+#define LIGHT_AMBIENT 0.1f, 0.1f, 0.1f
+#define LIGHT_DIFFUSE 0.5f, 0.5f, 0.5f
+#define LIGHT_SPECULAR 0.4f, 0.5f, 0.44f
+#define LIGHT_COLOR 1.0f, 1.0f, 1.0f
+#define CAMERA_POSITION 0.0f, 5.0f, 4.0f
 // Function prototypes
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -25,16 +30,21 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void do_movement();
 // Window dimensions
 
+glm::vec3 lightPos(LIGHT_POSITION);
+glm::vec3 light_ambient(LIGHT_AMBIENT);
+glm::vec3 light_diffuse(LIGHT_DIFFUSE);
+glm::vec3 light_specular(LIGHT_SPECULAR);
+glm::vec3 light_color(LIGHT_COLOR);
+Camera camera(glm::vec3(CAMERA_POSITION));
+
 const GLuint WIDTH = 800, HEIGHT = 600;
-GLfloat lastX = WIDTH/2.0, lastY = HEIGHT/2.0;
+GLfloat lastX = WIDTH / 2.0, lastY = HEIGHT / 2.0;
 GLboolean firstMouse = true;
 bool keys[1024];
 
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
 
-Camera camera(glm::vec3(0.0f, 5.0f, 4.0f));
-glm::vec3 lightPos(3.2f, 4.0f, -1.0f);
 
 int main()
 {
@@ -79,7 +89,7 @@ int main()
 	glGenBuffers(1, &hammerCylinderVBO);
 	glGenBuffers(1, &hammerHeadVBO);
 	glGenBuffers(1, &trianglesVBO);
-	
+
 	glBindVertexArray(hammerCylinderVAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, hammerCylinderVBO);
@@ -90,7 +100,7 @@ int main()
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(GLfloat), (GLvoid*)(8 * sizeof(GLfloat)));
 	glEnableVertexAttribArray(3);
-	glBindVertexArray(0); 
+	glBindVertexArray(0);
 
 	glBindVertexArray(hammerHeadVAO);
 	glBindBuffer(GL_ARRAY_BUFFER, hammerHeadVBO);
@@ -158,7 +168,7 @@ int main()
 	GLuint texture2;
 	GLuint texture4;
 	GLuint texture5;
-	
+
 	glGenTextures(1, &texture1);
 	glBindTexture(GL_TEXTURE_2D, texture1); // All upcoming GL_TEXTURE_2D operations now have effect on our texture object
 											// Set our texture parameters
@@ -229,11 +239,11 @@ int main()
 	int j = 0;
 	int k = 0;
 	int speed = 1;
-	int itemspeed = 1;
+	float itemspeed =2;
 	// Game loop
 
 	glUniform1i(glGetUniformLocation(ourShader.Program, "material.diffuse"), 0);
-	
+
 	while (!glfwWindowShouldClose(window))
 	{
 		++i;
@@ -242,8 +252,8 @@ int main()
 			j += speed;
 			if (abs(j % 6) == 0) {
 				k += itemspeed;
-				if(k==6)
-					itemspeed= -1;
+				if (k == 6)
+					itemspeed = -1;
 				if (k == 0)
 					itemspeed = 1;
 			}
@@ -253,23 +263,21 @@ int main()
 				speed = (-1);
 			}
 		}
-		
+
 		glfwPollEvents();
 		GLfloat currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 		do_movement();
-		
+
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		
 
-		
 		ourShader.Use();
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, texture1);
-		glUniform1i(glGetUniformLocation(ourShader.Program, "material.diffuse"),0);
+		glUniform1i(glGetUniformLocation(ourShader.Program, "material.diffuse"), 0);
 
 		GLint lightColorLoc = glGetUniformLocation(ourShader.Program, "lightColor");
 		GLint lightPosLoc = glGetUniformLocation(ourShader.Program, "lightPos");
@@ -286,11 +294,11 @@ int main()
 
 		//glUniform1d(glGetUniformLocation(ourShader.Program, "material.diffuse"), diffuseMap);
 
-		glUniform3f(glGetUniformLocation(ourShader.Program, "light.ambient"), 0.1f, 0.1f, 0.1f);
-		glUniform3f(glGetUniformLocation(ourShader.Program, "light.diffuse"), 0.5f, 0.5f, 0.5f);
-		glUniform3f(glGetUniformLocation(ourShader.Program, "light.specular"), 0.4f, 0.5f, 0.44f);
+		glUniform3f(glGetUniformLocation(ourShader.Program, "light.ambient"), light_ambient.x, light_ambient.y, light_ambient.z);
+		glUniform3f(glGetUniformLocation(ourShader.Program, "light.diffuse"), light_diffuse.x, light_diffuse.y, light_diffuse.z);
+		glUniform3f(glGetUniformLocation(ourShader.Program, "light.specular"), light_specular.x, light_specular.y, light_specular.z);
 
-		glUniform3f(lightColorLoc, 1.0f, 1.0f, 1.0f);
+		glUniform3f(lightColorLoc, light_color.x, light_color.y, light_color.z);
 		glUniform3f(lightPosLoc, lightPos.x, lightPos.y, lightPos.z);
 		glUniform3f(viewPosLoc, camera.Position.x, camera.Position.y, camera.Position.z);
 
@@ -303,10 +311,10 @@ int main()
 		GLfloat radius = 10.0f;
 		view = camera.GetViewMatrix();
 		// Create transformations
-	
-		model = glm::rotate(model, glm::radians((float)(HAMMERSPEED) * (j )), glm::vec3(0.0f, 0.0f, -1.0f));
+
+		model = glm::rotate(model, glm::radians((float)(HAMMERSPEED) * (j)), glm::vec3(0.0f, 0.0f, -1.0f));
 		projection = glm::perspective(camera.Zoom, (GLfloat)WIDTH / (GLfloat)HEIGHT, 0.1f, 100.0f);
-	
+
 		// Get the uniform locations
 		GLint modelLoc = glGetUniformLocation(ourShader.Program, "model");
 		GLint viewLoc = glGetUniformLocation(ourShader.Program, "view");
@@ -319,7 +327,6 @@ int main()
 
 		// Draw container
 		glBindVertexArray(hammerCylinderVAO);
-		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 		glDrawArrays(GL_TRIANGLES, 0, 216);
 		glBindVertexArray(0);
 
@@ -348,36 +355,40 @@ int main()
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, texture1);
-		model = glm::translate(model, glm::vec3(0.0f, 0.0f, (float)(k)));
+		model = glm::translate(model, glm::vec3(-0.5f, 0.3f, -6.2 + (float)( 0.1*HAMMERSPEED*j)));
 		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 		glUniform1i(glGetUniformLocation(ourShader.Program, "material.diffuse"), 0);
 		glBindVertexArray(item1VAO);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
-		
+
 		glActiveTexture(GL_TEXTURE5);
-		glBindTexture(GL_TEXTURE_2D, texture5);
 		glUniform1i(glGetUniformLocation(ourShader.Program, "material.diffuse"), 5);
 		glBindVertexArray(buttonsVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 168);
 		glBindVertexArray(0);
-		
+
 
 
 		lampShader.Use();
+		model = glm::mat4();
+		model = glm::translate(model, lightPos);
+		model = glm::scale(model, glm::vec3(0.1f));
 		modelLoc = glGetUniformLocation(lampShader.Program, "model");
 		viewLoc = glGetUniformLocation(lampShader.Program, "view");
 		projLoc = glGetUniformLocation(lampShader.Program, "projection");
+		lightColorLoc = glGetUniformLocation(lampShader.Program, "lightColor");
+		GLint objectColorLoc = glGetUniformLocation(lampShader.Program, "objectColor");
 		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 		glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
-		model = glm::mat4();
-		model = glm::translate(model, lightPos);
-		model = glm::scale(model, glm::vec3(0.2f));
 		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		glUniform3f(lightColorLoc, light_color.x, light_color.y, light_color.z);
+		glUniform3f(objectColorLoc, light_color.x, light_color.y, light_color.z);
+		//glUniformMatrix3fv()
 		glBindVertexArray(lightVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		glBindVertexArray(0);
 		glFlush();
-		
+
 		glfwSwapBuffers(window);
 	}
 	// Properly de-allocate all resources once they've outlived their purpose
@@ -409,7 +420,7 @@ void do_movement()
 		camera.ProcessKeyboard(LEFT, deltaTime);
 	if (keys[GLFW_KEY_D])
 		camera.ProcessKeyboard(RIGHT, deltaTime);
-//	if (keys[GLFW_KEY_SPACE])
+	//	if (keys[GLFW_KEY_SPACE])
 	//	glfwSetTime
 }
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
